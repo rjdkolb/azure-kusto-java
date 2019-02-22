@@ -1,26 +1,31 @@
-import com.microsoft.azure.kusto.data.KustoClient;
-import com.microsoft.azure.kusto.data.KustoConnectionStringBuilder;
-import com.microsoft.azure.kusto.data.KustoResults;
+import com.microsoft.azure.kusto.data.ClientImpl;
+import com.microsoft.azure.kusto.data.ClientRequestProperties;
+import com.microsoft.azure.kusto.data.ConnectionStringBuilder;
+import com.microsoft.azure.kusto.data.Results;
+
+import java.util.concurrent.TimeUnit;
 
 public class Query {
 
     public static void main(String[] args) {
 
-        String appId = "<app id>";
-        String appKey = "<app key>";
-
-        String kustoClusterPath = "https://help.kusto.windows.net";
-        String dbName = "Samples";
-
-        String query = "StormEvents | take 10";
-
         try {
-            KustoConnectionStringBuilder kcsb = KustoConnectionStringBuilder.createWithAadApplicationCredentials(kustoClusterPath, appId, appKey);
-            KustoClient client = new KustoClient(kcsb);
+            ConnectionStringBuilder csb = ConnectionStringBuilder.createWithAadApplicationCredentials(
+                    System.getProperty("clusterPath"),
+                    System.getProperty("appId"),
+                    System.getProperty("appKey"),
+                    System.getProperty("appTenant"));
+            ClientImpl client = new ClientImpl(csb);
 
-            KustoResults results = client.execute(dbName, query);
+            Results results = client.execute( System.getProperty("dbName"), System.getProperty("query"));
 
             System.out.println(String.format("Kusto sent back %s rows.", results.getValues().size()));
+
+            // in case we want to pass client request properties
+            ClientRequestProperties clientRequestProperties = new ClientRequestProperties();
+            clientRequestProperties.setTimeoutInMilliSec(TimeUnit.MINUTES.toMillis(1));
+
+            results = client.execute( System.getProperty("dbName"), System.getProperty("query"), clientRequestProperties);
         } catch (Exception e) {
             e.printStackTrace();
         }
